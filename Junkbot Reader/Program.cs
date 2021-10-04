@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Junkbot_Reader.Models;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,7 +14,8 @@ namespace Junkbot_Reader
 
         public static void Main(string[] args)
         {
-            var count = 0;
+            var scenes = new List<SceneSingle>();
+
             foreach (var file in Directory.GetFiles(basepath))
             {
                 var content = File.ReadAllText(file);
@@ -23,7 +25,8 @@ namespace Junkbot_Reader
                 {
                     var contents = content.Replace("\n", "").Split('\r');
 
-                    //var title       = contents.Extract("title");
+                    var title       = contents.Extract("title");
+
                     //var par         = contents.Extract("par");
                     //var hint        = contents.Extract("hint");
                     //var backdrop    = contents.Extract("backdrop");
@@ -31,54 +34,36 @@ namespace Junkbot_Reader
                     //var size        = contents.Extract("size");
                     //var spacing     = contents.Extract("spacing");
                     //var scale       = contents.Extract("scale");
-                    //var types       = contents.Extract("types");
-                    //var colors      = contents.Extract("colors");
-                    //var parts =     "parts=" + String.Join(",", contents.ExtractAll("parts")).Replace("parts=", "");
 
-                    if (!Directory.Exists(basepath + "\\output\\"))
-                    {
-                        Directory.CreateDirectory(basepath + "\\output\\");
-                    }
-
-                    File.WriteAllText(
-                        String.Join(
-                            "",
-                            new string[]
+                    var types   = contents.Extract("types").Split(',');
+                    var colors  = contents.Extract("colors").Split(',');
+                    var parts   = 
+                        String.Join(",", contents.ExtractAll("parts"))
+                        .Split(',')
+                        .Select(s => s.Split(';'))
+                        .Select(s => 
+                        {
+                            var typeIndex  = int.Parse(s[2]) - 1;
+                            var colorIndex = int.Parse(s[3]) - 1;
+                            return new RetroObject()
                             {
-                                basepath,
-                                "\\output\\",
-                                count.ToString("00"),
-                                "_",
-                                String.Join("", contents.Extract("title").Split('=')[1].Split(Path.GetInvalidFileNameChars())),
-                                ".txt"
-                            }),
-                        String.Join(
-                            "\n",
-                            new string[] 
-                            {
-                                "[info]",
-                                contents.Extract("title"),
-                                contents.Extract("par"),
-                                contents.Extract("hint"),
-                                "\n",
+                                X = Byte.Parse(s[0]),
+                                Y = Byte.Parse(s[1]),
+                                Type =  typeIndex < types.Length ? types[typeIndex] : s[2],
+                                Color = colors[colorIndex],
+                                State = s[4],
+                                What = Byte.Parse(s[5]),
+                                Key = ""
+                            };
+                        }).ToList();
 
-                                "[background]",
-                                contents.Extract("backdrop"),
-                                contents.Extract("decals"),
-                                "\n",
+                    Console.WriteLine(title);
 
-                                "[playfield]",
-                                contents.Extract("size"),
-                                contents.Extract("spacing"),
-                                contents.Extract("scale"),
-                                "\n",
+                    //var gameObjects = new List<GameObject>();
 
-                                "[partslist]",
-                                contents.Extract("types"),
-                                contents.Extract("colors"),
-                                "parts=\n\t" + String.Join(",", contents.ExtractAll("parts")).Replace("parts=", "").Replace(",", ",\n\t") }));
+                    //gameObjects.Add(new Sprite("background_level"));
 
-                    count++;
+                    //var scene = new SceneSingle(gameObjects);
                 }
             }
 
@@ -87,12 +72,12 @@ namespace Junkbot_Reader
 
         public static string Extract(this string[] contents, string pattern)
         {
-            return contents.FirstOrDefault(x => x.StartsWith(pattern));
+            return contents.FirstOrDefault(x => x.StartsWith(pattern)).Split('=')[1];
         }
 
         public static string[] ExtractAll(this string[] contents, string pattern)
         {
-            return contents.Where(x => x.StartsWith(pattern)).ToArray();
+            return contents.Where(x => x.StartsWith(pattern)).Select(x => x.Split('=')[1]).ToArray();
         }
     }
 }
