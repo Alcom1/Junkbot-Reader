@@ -1,20 +1,22 @@
 ﻿using Junkbot_Reader.Models;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Junkbot_Reader
 {
     public static class Program
     {
-        public const string basepath = "C:\\Users\\Alcom\\Desktop\\fff2";
+        public const string basepath = "C:\\Users\\Alcom\\Desktop\\fff";
 
         public static void Main(string[] args)
         {
             var scenes = new List<SceneSingle>();
+            var max = 61;
+            var counter = 0;
 
             foreach (var file in Directory.GetFiles(basepath))
             {
@@ -25,8 +27,7 @@ namespace Junkbot_Reader
                 {
                     var contents = content.Replace("\n", "").Split('\r');
 
-                    var title       = contents.Extract("title");
-
+                    //var title       = contents.Extract("title");
                     //var par         = contents.Extract("par");
                     //var hint        = contents.Extract("hint");
                     //var backdrop    = contents.Extract("backdrop");
@@ -35,7 +36,7 @@ namespace Junkbot_Reader
                     //var spacing     = contents.Extract("spacing");
                     //var scale       = contents.Extract("scale");
 
-                    var types   = contents.Extract("types").Split(',');
+                    var types   = String.Join(",", contents.ExtractAll("types")).Split(',');
                     var colors  = contents.Extract("colors").Split(',');
                     var parts   = 
                         String.Join(",", contents.ExtractAll("parts"))
@@ -43,31 +44,136 @@ namespace Junkbot_Reader
                         .Select(s => s.Split(';'))
                         .Select(s => 
                         {
-                            var typeIndex  = int.Parse(s[2]) - 1;
-                            var colorIndex = int.Parse(s[3]) - 1;
                             return new RetroObject()
                             {
                                 X = Byte.Parse(s[0]),
                                 Y = Byte.Parse(s[1]),
-                                Type =  typeIndex < types.Length ? types[typeIndex] : s[2],
-                                Color = colors[colorIndex],
+                                Type =  types[int.Parse(s[2]) - 1],
+                                Color = colors[int.Parse(s[3]) - 1],
                                 State = s[4],
                                 What = Byte.Parse(s[5]),
                                 Key = ""
                             };
                         }).ToList();
 
-                    Console.WriteLine(title);
+                    var gameObjects = parts.Select(x => ConvertRetroToGame(x)).ToList();
 
-                    //var gameObjects = new List<GameObject>();
+                    //Remove Nulls!
+                    gameObjects.RemoveAll(o => o == null);
 
-                    //gameObjects.Add(new Sprite("background_level"));
+                    //Move to match coordinates
+                    gameObjects.ForEach(o => 
+                    { 
+                        if (o != null && 
+                            o.Position.HasValue) 
+                        {
+                            o.Position = new Boint((byte)(o.Position.Value.X - 1), (byte)(o.Position.Value.Y + 1));
+                        } 
+                    });
 
-                    //var scene = new SceneSingle(gameObjects);
+                    //LOL!
+                    if (counter == 1)
+                    {
+                        gameObjects.RemoveAll(o =>
+                            o.Name == "Brick" &&
+                            o.Position.Value.X == 22 &&
+                            o.Position.Value.Y == 6);
+
+                        gameObjects.Where(o =>
+                            o.Name == "Brick" &&
+                            o.Position.Value.X == 19 &&
+                            o.Position.Value.Y == 6).ToList().ForEach(o => ((Brick)o).Width = 4);
+                    }
+
+                    //
+                    gameObjects.Add(new Sprite("background_level"));
+                    gameObjects.Add(new LevelSequence(
+                        contents.Extract("title"),
+                        byte.Parse(contents.Extract("par")),
+                        $"LEVEL_{mod(counter + 1, max):00}",
+                        $"LEVEL_{mod(counter - 1, max):00}"));
+
+                    scenes.Add(new SceneSingle(gameObjects, $"LEVEL_{counter:00}"));
+                    counter++;
                 }
             }
 
+            var qq = SerializeObject(scenes).Remove(0, 1);
+
             Console.ReadKey();
+        }
+
+        public static int mod(int val, int length)
+        {
+            return (val + length) % length;
+        }
+
+        public static string SerializeObject(Object obj)
+        {
+            return JsonConvert.SerializeObject(obj, new JsonSerializerSettings
+            {
+                ContractResolver = new DefaultContractResolver
+                {
+                    NamingStrategy = new CamelCaseNamingStrategy()
+                },
+                NullValueHandling = NullValueHandling.Ignore,
+                Formatting = Formatting.Indented
+            });
+        }
+
+        public static GameObject ConvertRetroToGame(RetroObject retro)
+        {
+            if (new string[]
+                {
+                    //"HAZ_SLICKFIRE",
+                    "haz_walker",
+                    "HAZ_SLICKPIPE",
+                    //"HAZ_SLICKFAN",
+                    "haz_slickJump",
+                    "HAZ_CLIMBER",
+                    "BRICK_SLICKJUMP",
+                    "HAZ_DUMBFLOAT",
+                    "HAZ_SLICKSWITCH",
+                    "HAZ_FLOAT",
+                    "HAZ_SLICKSHIELD",
+
+                    //UNDERCOVER
+                    "HAZ_SLICKCRATE",
+                    "HAZ_SLICKLASER_L",
+                    "haz_slickLaser_R",
+                    "HAZ_SLICKTELEPORT",
+                    "SCAREDY",
+                    "BRICK_SLICKSHIELD"
+                }.Contains(retro.Type))
+            {
+                return null;
+            }
+            if (new string[]
+                {
+                    "HAZ_SLICKFIRE",
+                    "HAZ_SLICKFAN"
+                }.Contains(retro.Type))
+            {
+                return new GameObject("BrickPlate", retro.X, retro.Y);
+            }
+            if (retro.Type.StartsWith("BRICK"))
+            {
+                return new Brick(
+                    retro.X, 
+                    retro.Y, 
+                    Byte.Parse(retro.Type.Split('_')[1]), 
+                    String.Equals(retro.Color, "GRAY") ? null : retro.Color.ToLower());
+            }
+            if (String.Equals(retro.Type, "MINIFIG"))
+            {
+                return new CharacterBot((byte)(retro.X + 1), retro.Y);
+            }
+            if (String.Equals(retro.Type, "flag"))
+            {
+                return new CharacterBin((byte)(retro.X + 1), retro.Y);
+            }
+
+            return null;
         }
 
         public static string Extract(this string[] contents, string pattern)

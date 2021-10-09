@@ -16,6 +16,17 @@ namespace Junkbot_Reader.Models
 
     public class GameObject
     {
+        protected GameObject()
+        {
+
+        }
+
+        public GameObject(string name, byte x, byte y)
+        {
+            this.Name = name;
+            this.Position = new Boint(x, y);
+        }
+
         public string Name { get; set; }
 
         public Boint? Position { get; set; }
@@ -55,7 +66,7 @@ namespace Junkbot_Reader.Models
 
     public class Brick : GameObject
     {
-        Brick(byte x, byte y, byte width, string color)
+        public Brick(byte x, byte y, byte width, string color)
         {
             Name = "Brick";
             Position = new Boint(x, y);

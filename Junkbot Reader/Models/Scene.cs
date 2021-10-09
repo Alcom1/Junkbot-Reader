@@ -4,14 +4,17 @@ namespace Junkbot_Reader.Models
 {
     public struct Scene
     {
-        public Scene(string name, string need, int zIndex)
+        public Scene(string name, string tag, string need, int zIndex)
         {
             Name = name;
+            Tag = tag;
             Need = new string[] { need };
             ZIndex = zIndex;
         }
 
         public string Name { get; set; }
+
+        public string Tag { get; set; }
 
         public string[] Need { get; set; }
 
@@ -21,9 +24,9 @@ namespace Junkbot_Reader.Models
 
     public class SceneSingle
     {
-        public SceneSingle(List<GameObject> gameObjects)
+        public SceneSingle(List<GameObject> gameObjects, string tag)
         {
-            this.Scene = new Scene("Level", "LevelInterface", 0);
+            this.Scene = new Scene("Level", tag, "LevelInterface", 0);
             this.GameObjects = gameObjects.ToArray();
         }
 
