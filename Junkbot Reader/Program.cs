@@ -10,7 +10,7 @@ namespace Junkbot_Reader
 {
     public static class Program
     {
-        public const string basepath = "C:\\Users\\Alcom\\Desktop\\fff";
+        public const string basepath = @"C:\Users\Alcom\Desktop\Dev\Not Git\Junkbot\fff";
 
         public static void Main(string[] args)
         {
@@ -75,12 +75,10 @@ namespace Junkbot_Reader
                     if (counter == 1)
                     {
                         gameObjects.RemoveAll(o =>
-                            o.Name == "Brick" &&
                             o.Position.Value.X == 22 &&
                             o.Position.Value.Y == 6);
 
                         gameObjects.Where(o =>
-                            o.Name == "Brick" &&
                             o.Position.Value.X == 19 &&
                             o.Position.Value.Y == 6).ToList().ForEach(o => ((Brick)o).Width = 4);
                     }
@@ -127,15 +125,15 @@ namespace Junkbot_Reader
                 {
                     //"HAZ_SLICKFIRE",
                     "haz_walker",
-                    "HAZ_SLICKPIPE",
+                    //"HAZ_SLICKPIPE",
                     //"HAZ_SLICKFAN",
-                    "haz_slickJump",
+                    //"haz_slickJump",
                     "HAZ_CLIMBER",
-                    "BRICK_SLICKJUMP",
+                    //"BRICK_SLICKJUMP",
                     "HAZ_DUMBFLOAT",
                     "HAZ_SLICKSWITCH",
                     "HAZ_FLOAT",
-                    "HAZ_SLICKSHIELD",
+                    //"HAZ_SLICKSHIELD",
 
                     //UNDERCOVER
                     "HAZ_SLICKCRATE",
@@ -148,13 +146,29 @@ namespace Junkbot_Reader
             {
                 return null;
             }
-            if (new string[]
-                {
-                    "HAZ_SLICKFIRE",
-                    "HAZ_SLICKFAN"
-                }.Contains(retro.Type))
+            if (String.Equals(retro.Type, "BRICK_SLICKJUMP"))
             {
-                return new GameObject("BrickPlate", retro.X, retro.Y);
+                return new GameObject("BrickJumpMove", retro.X, retro.Y);
+            }
+            if (String.Equals(retro.Type, "haz_slickJump"))
+            {
+                return new GameObject("BrickJump", retro.X, retro.Y);
+            }
+            if (String.Equals(retro.Type, "HAZ_SLICKPIPE"))
+            {
+                return new GameObject("BrickPipe", retro.X, retro.Y);
+            }
+            if (String.Equals(retro.Type, "HAZ_SLICKSHIELD"))
+            {
+                return new GameObject("BrickSuper", retro.X, retro.Y);
+            }
+            if (String.Equals(retro.Type, "HAZ_SLICKFIRE"))
+            {
+                return new BrickPlateHot(retro.X, retro.Y, String.Equals(retro.State, "on"));
+            }
+            if (String.Equals(retro.Type, "HAZ_SLICKFAN"))
+            {
+                return new BrickPlateFan(retro.X, retro.Y, new String[] { "on", "none" }.Contains(retro.State));
             }
             if (retro.Type.StartsWith("BRICK"))
             {

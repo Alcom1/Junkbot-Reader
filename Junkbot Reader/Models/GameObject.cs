@@ -68,7 +68,7 @@ namespace Junkbot_Reader.Models
     {
         public Brick(byte x, byte y, byte width, string color)
         {
-            Name = "Brick";
+            Name = "BrickNormal";
             Position = new Boint(x, y);
             Width = width;
             Color = color;
@@ -78,6 +78,32 @@ namespace Junkbot_Reader.Models
 
         public string Color { get; set; }
     }
+
+    public class BrickPlate : GameObject
+    {
+        public bool IsOn { get; set; }
+    }
+
+    public class BrickPlateHot : BrickPlate
+    {
+        public BrickPlateHot(byte x, byte y, bool isOn)
+        {
+            Name = "BrickPlateHot";
+            Position = new Boint(x, y);
+            IsOn = isOn;
+        }
+    }
+
+    public class BrickPlateFan : BrickPlate
+    {
+        public BrickPlateFan(byte x, byte y, bool isOn)
+        {
+            Name = "BrickPlateFan";
+            Position = new Boint(x, y);
+            IsOn = isOn;
+        }
+    }
+
     public struct Levels
     {
         public Levels(string next, string prev)
