@@ -46,13 +46,29 @@ namespace Junkbot_Reader.Models
         public string Image { get; set; }
     }
 
-    public class CharacterBot : GameObject
+    public class CharacterBot : CharacterDir
     {
-        public CharacterBot(byte x, byte y)
+        public CharacterBot(byte x, byte y, bool isForward)
         {
             Name = "CharacterBot";
             Position = new Boint(x, y);
+            IsForward = isForward;
         }
+    }
+
+    public class CharacterRBG : CharacterDir
+    {
+        public CharacterRBG(byte x, byte y, bool isForward)
+        {
+            Name = "CharacterRBG";
+            Position = new Boint(x, y);
+            IsForward = isForward;
+        }
+    }
+
+    public class CharacterDir : GameObject
+    {
+        public bool IsForward { get; set; }
     }
 
     public class CharacterBin : GameObject
@@ -82,25 +98,43 @@ namespace Junkbot_Reader.Models
     public class BrickPlate : GameObject
     {
         public bool IsOn { get; set; }
+
+        public int? Circuit { get; set; }
+    }
+
+    public class BrickPlateButton : BrickPlate
+    {
+        public BrickPlateButton(byte x, byte y, string key, bool isOn)
+        {
+            Name = "BrickPlateButton";
+            Position = new Boint(x, y);
+            IsOn = isOn;
+            int.TryParse(key.Replace("switch", ""), out int temp);
+            Circuit = temp;
+        }
     }
 
     public class BrickPlateHot : BrickPlate
     {
-        public BrickPlateHot(byte x, byte y, bool isOn)
+        public BrickPlateHot(byte x, byte y, string key, bool isOn)
         {
             Name = "BrickPlateHot";
             Position = new Boint(x, y);
             IsOn = isOn;
+            int.TryParse(key.Replace("switch", ""), out int temp);
+            Circuit = temp;
         }
     }
 
     public class BrickPlateFan : BrickPlate
     {
-        public BrickPlateFan(byte x, byte y, bool isOn)
+        public BrickPlateFan(byte x, byte y, string key, bool isOn)
         {
             Name = "BrickPlateFan";
             Position = new Boint(x, y);
             IsOn = isOn;
+            int.TryParse(key.Replace("switch", ""), out int temp);
+            Circuit = temp;
         }
     }
 
